@@ -1,6 +1,7 @@
 - name: Cambiar hostname según IP
   hosts: all
   become: yes
+  gather_facts: yes
 
   vars:
     ip_hostname_map:
@@ -8,11 +9,11 @@
 
   tasks:
 
-    - name: Obtener IP real
+    - name: Obtener IP real del cliente
       set_fact:
         ip_actual: "{{ ansible_default_ipv4.address }}"
 
-    - name: Debug IP
+    - name: Mostrar IP detectada
       debug:
         msg: "IP detectada: {{ ip_actual }}"
 
@@ -21,12 +22,28 @@
         nuevo_hostname: "{{ ip_hostname_map[ip_actual] }}"
       when: ip_actual in ip_hostname_map
 
-    - name: Cambiar el hostname si corresponde
-      hostname:
-        name: "{{ nuevo_hostname }}"
+    - name: Mostrar hostname objetivo
+      debug:
+        msg: "Hostname a aplicar: {{ nuevo_hostname }}"
       when: nuevo_hostname is defined
 
-    - name: Confirmar cambio
-      debug:
-        msg: "Hostname cambiado a {{ nuevo_hostname }}"
+    - name: Cambiar hostname con hostnamectl (principal)
+      command: hostnamectl set-hostname {{ nuevo_hostname }}
       when: nuevo_hostname is defined
+      ignore_errors: yes
+
+    - name: Cambiar hostname alternativo (fallback)
+      command: hostname {{ nuevo_hostname }}
+      when: nuevo_hostname is defined
+
+    - name: Reiniciar servicio hostname
+      command: systemctl restart systemd-hostnamed
+      when: nuevo_hostname is defined
+
+    - name: Verificar hostname final
+      command: hostname
+      register: resultado_hostname
+
+    - name: Mostrar resultado final
+      debug:
+        msg: "Hostname final: {{ resultado_hostname.stdout }}"
