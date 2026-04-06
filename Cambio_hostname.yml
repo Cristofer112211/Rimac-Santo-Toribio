@@ -1,0 +1,31 @@
+- name: Cambiar hostname según IP
+  hosts: clientes2 clientes
+  become: yes
+  vars:
+    ip_hostname_map:
+      "10.66.86.37": STO-CRIS
+
+  tasks:
+
+    - name: Obtener la IP del cliente
+      command: hostname -I
+      register: ip_output
+
+    - name: Extraer la IP principal
+      set_fact:
+        ip_actual: "{{ ip_output.stdout.split()[0] }}"
+
+    - name: Obtener el hostname correspondiente
+      set_fact:
+        nuevo_hostname: "{{ ip_hostname_map[ip_actual] }}"
+      when: ip_actual in ip_hostname_map
+
+    - name: Cambiar el hostname si corresponde
+      hostname:
+        name: "{{ nuevo_hostname }}"
+      when: nuevo_hostname is defined
+
+    - name: Confirmar cambio de hostname
+      debug:
+        msg: "Hostname cambiado a {{ nuevo_hostname }}"
+      when: nuevo_hostname is defined
