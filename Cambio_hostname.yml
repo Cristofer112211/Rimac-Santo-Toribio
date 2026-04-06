@@ -1,21 +1,22 @@
 - name: Cambiar hostname según IP
-  hosts: 10.66.86.37
+  hosts: all
   become: yes
+
   vars:
     ip_hostname_map:
       "10.66.86.37": STO-CRIS
 
   tasks:
 
-    - name: Obtener la IP del cliente
-      command: hostname -I
-      register: ip_output
-
-    - name: Extraer la IP principal
+    - name: Obtener IP real
       set_fact:
-        ip_actual: "{{ ip_output.stdout.split()[0] }}"
+        ip_actual: "{{ ansible_default_ipv4.address }}"
 
-    - name: Obtener el hostname correspondiente
+    - name: Debug IP
+      debug:
+        msg: "IP detectada: {{ ip_actual }}"
+
+    - name: Obtener hostname correspondiente
       set_fact:
         nuevo_hostname: "{{ ip_hostname_map[ip_actual] }}"
       when: ip_actual in ip_hostname_map
@@ -25,7 +26,7 @@
         name: "{{ nuevo_hostname }}"
       when: nuevo_hostname is defined
 
-    - name: Confirmar cambio de hostname
+    - name: Confirmar cambio
       debug:
         msg: "Hostname cambiado a {{ nuevo_hostname }}"
       when: nuevo_hostname is defined
