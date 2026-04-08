@@ -1,0 +1,35 @@
+---
+- name: Transferir imagen al cliente remoto y configurar fondo de pantalla
+  hosts: all
+  become: yes
+  tasks:
+
+    - name: Copiar la imagen FONDO.png al cliente remoto para el usuario sistemas
+      copy:
+        src: /home/sistemas/Imágenes/FONDO1.png  # Ruta en la máquina local
+        dest: /home/sistemas/Imágenes/FONDO1.png  # Ruta en el cliente remoto
+        owner: sistemas  # Usuario propietario en el cliente remoto
+        group: sistemas  # Grupo propietario en el cliente remoto
+        mode: '0644'  # Permisos de lectura y escritura para el propietario, solo lectura para otros
+
+    - name: Copiar la imagen FONDO.png al cliente remoto para el usuario docente
+      copy:
+        src: /home/sistemas/Imágenes/FONDO1.png  # Ruta en la máquina local
+        dest: /home/docente/Imágenes/FONDO1.png  # Ruta en el cliente remoto para el usuario docente
+        owner: docente  # Usuario propietario en el cliente remoto
+        group: docente  # Grupo propietario en el cliente remoto
+        mode: '0644'  # Permisos de lectura y escritura para el propietario, solo lectura para otros
+
+    - name: Establecer la imagen como fondo de pantalla en GNOME para el usuario sistemas
+      command: gsettings set org.gnome.desktop.background picture-uri "file:///home/sistemas/Imágenes/FONDO1.png"
+      become_user: sistemas  # Ejecutar como el usuario sistemas
+      environment:
+        DISPLAY: ":0"  # Asegura que el comando se ejecute en el entorno gráfico correcto
+        XAUTHORITY: "/home/sistemas/.Xauthority"  # Autenticación X
+
+    - name: Establecer la imagen como fondo de pantalla en GNOME para el usuario docente
+      command: gsettings set org.gnome.desktop.background picture-uri "file:///home/docente/Imágenes/FONDO1.png"
+      become_user: docente  # Ejecutar como el usuario docente
+      environment:
+        DISPLAY: ":0"  # Asegura que el comando se ejecute en el entorno gráfico correcto
+        XAUTHORITY: "/home/docente/.Xauthority"  # Autenticación X
