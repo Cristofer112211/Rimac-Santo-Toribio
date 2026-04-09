@@ -4,29 +4,36 @@
 
   vars:
     ip_hostname_map:
-      "10.66.86.37": STO-CRIS
+      "10.66.86.37": STO-CRISAN
 
   tasks:
 
-    - name: Obtener IP real
+    - name: Obtener IP
+      command: hostname -I
+      register: ip_output
+
+    - name: Extraer IP principal
       set_fact:
-        ip_actual: "{{ ansible_default_ipv4.address }}"
+        ip_actual: "{{ ip_output.stdout.split()[0] }}"
 
-    - name: Debug IP
-      debug:
-        msg: "IP detectada: {{ ip_actual }}"
-
-    - name: Obtener hostname correspondiente
+    - name: Definir hostname
       set_fact:
         nuevo_hostname: "{{ ip_hostname_map[ip_actual] }}"
       when: ip_actual in ip_hostname_map
-
-    - name: Cambiar el hostname si corresponde
-      hostname:
-        name: "{{ nuevo_hostname }}"
+      
+    # MÉTODO 1 (archivo /etc/hostname)
+    - name: Escribir hostname en archivo
+      copy:
+        dest: /etc/hostname
+        content: "{{ nuevo_hostname }}"
       when: nuevo_hostname is defined
 
-    - name: Confirmar cambio
+    # MÉTODO 2 (aplicar en caliente)
+    - name: Aplicar hostname en sistema
+      command: hostname {{ nuevo_hostname }}
+      when: nuevo_hostname is defined
+
+    - name: Confirmar
       debug:
         msg: "Hostname cambiado a {{ nuevo_hostname }}"
       when: nuevo_hostname is defined
